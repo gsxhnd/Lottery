@@ -1,4 +1,5 @@
-#README
+# README
 
-## 数据实时更新
-`http://e.17500.cn/getData/ssq.TXT`
+## 数据更新
+
+数据源：`http://e.17500.cn/getData/ssq.TXT`
