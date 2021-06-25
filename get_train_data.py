@@ -6,6 +6,7 @@ def get_train_data():
     return pd.read_csv("./input/train_data.csv")
 
 
+# 下载历史的中奖数据并处理导出CSV到Input文件夹
 def download_lottery_data():
     url = "http://e.17500.cn/getData/ssq.TXT"
 
