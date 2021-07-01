@@ -18,7 +18,4 @@ def download_lottery_data():
 
 
 if __name__ == '__main__':
-    # download_lottery_data()
-    train_data = get_train_data()
-    train_data.hist(bins=50, figsize=(20, 15))
-    plt.show()
+    download_lottery_data()
