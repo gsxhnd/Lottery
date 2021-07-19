@@ -1,4 +1,5 @@
 from get_train_data import *
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     train_data = get_train_data()

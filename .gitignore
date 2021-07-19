@@ -1,6 +1,6 @@
 .idea
-*.iml
 venv
-.DS_Store
-output
+*.iml
+.Ds_store
 input
+output
