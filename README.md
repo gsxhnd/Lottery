@@ -5,3 +5,6 @@
 ## 历史中奖数据源
 
 数据源：`http://e.17500.cn/getData/ssq.TXT`
+
+下载数据
+> make download_data
