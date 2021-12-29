@@ -16,7 +16,8 @@ if __name__ == '__main__':
     x = train_data.drop(columns=col_x).copy()
     x["date"] = pd.to_datetime(x["date"])
 
-    col_y = ["no", "date", "red_r_1", "red_r_2", "red_r_3", "red_r_4", "red_r_5", "red_r_6"]
+    col_y = ["no", "date", "red_r_1", "red_r_2",
+             "red_r_3", "red_r_4", "red_r_5", "red_r_6"]
     y = train_data.drop(columns=col_y, axis=1).copy()
     for i in y:
         print("ball number: ")
