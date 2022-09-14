@@ -1,5 +1,9 @@
-from get_train_data import *
+from download_train_data import *
 from sklearn.linear_model import LinearRegression
+
+
+def get_train_data():
+    return pd.read_csv("./input/train_data.csv")
 
 
 def train_model(train_x, train_y, predict_x):
