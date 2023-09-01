@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: '3'
+
+tasks:
+  data_download:
+    dir: data
+    cmds:
+      - wget https://e.17500.cn/getData/ssq.TXT -O source_data.txt
+  mod:
+    cmds:
+      - pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+  clean:
+    cmds:
+      - rm -rf ./data
