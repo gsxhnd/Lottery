@@ -1,38 +1,34 @@
-from download_train_data import *
-from sklearn.linear_model import LinearRegression
+import pandas as pd
+
+train_test_split = 0.7
 
 
-def get_train_data():
-    return pd.read_csv("./input/train_data.csv")
+# col_x = [
+#     "no", "data",
+#     "red_1", "red_2", "red_3",
+#     "red_4", "red_5", "red_6",
+#     "blue",
+#     "red_r_1", "red_r_2", "red_r_3",
+#     "red_r_4", "red_r_5", "red_r_6"
+# ]
+
+def create_train_test_data():
+    source_data = pd.read_csv("./data/source_data.txt",
+                              usecols=range(15), sep=" ",
+                              header=None)
+    train_data = source_data.iloc[:int(len(source_data) * train_test_split)]
+    test_data = source_data.iloc[int(len(source_data) * train_test_split):]
+    print(train_data)
+    print(test_data)
 
 
 def train_model(train_x, train_y, predict_x):
-    liner = LinearRegression(fit_intercept=True, normalize=False, copy_X=True)
-    liner.fit(train_x, train_y)
-    predict = liner.predict(predict_x)
-    return predict
+    pass
+    # liner = LinearRegression(fit_intercept=True, normalize=False, copy_X=True)
+    # liner.fit(train_x, train_y)
+    # predict = liner.predict(predict_x)
+    # return predict
 
 
 if __name__ == '__main__':
-    train_data = get_train_data()
-    col_x = ["red_1", "red_2", "red_3", "red_4", "red_5", "red_6", "blue", "red_r_1", "red_r_2", "red_r_3", "red_r_4",
-             "red_r_5", "red_r_6"]
-    x = train_data.drop(columns=col_x).copy()
-    x["date"] = pd.to_datetime(x["date"])
-
-    col_y = ["no", "date", "red_r_1", "red_r_2",
-             "red_r_3", "red_r_4", "red_r_5", "red_r_6"]
-    y = train_data.drop(columns=col_y, axis=1).copy()
-    for i in y:
-        print("ball number: ")
-        print(y[i])
-
-    df = pd.DataFrame({"no": ["2021095"]})
-    df["date"] = pd.to_datetime(["2021-08-22"])
-
-    print(x)
-    print(y)
-    print(df)
-
-    p = train_model(x, y, df)
-    print(p)
+    create_train_test_data()
