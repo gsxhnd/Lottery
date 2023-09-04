@@ -3,13 +3,16 @@ version: '3'
 
 tasks:
   data_download:
+    desc: download source data
     dir: data
     cmds:
       - wget https://e.17500.cn/getData/ssq.TXT -O source_data.txt
   mod:
+    desc: download python dep require
     cmds:
       - pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
   train:
+    desc: train model
     cmds:
       - python src/train.py
   clean:
