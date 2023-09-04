@@ -9,7 +9,7 @@ model_args: dict[str, dict] = {
         "red_hidden_size": 32,
         "red_layer_size": 1,
         "blue_n_class": 16,
-        "blue_epochs": 1,
+        "blue_epochs": 128,
         "blue_embedding_size": 32,
         "blue_hidden_size": 32,
         "blue_layer_size": 1

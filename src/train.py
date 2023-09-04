@@ -28,7 +28,7 @@ def create_train_test_data() -> Dict[str, Dict[str, str]]:
 
     train_data = train_data.iloc[:, 2:].values
     test_data = test_data.iloc[:, 2:].values
-    # logger.info("训练集数据维度: {}".format(data.shape))
+    # logger.info("训练 集数据维度: {}".format(data.shape))
 
     train_x_data, train_y_data = [], []
     test_x_data, test_y_data = [], []
@@ -53,26 +53,32 @@ def create_train_test_data() -> Dict[str, Dict[str, str]]:
             "y_data": np.array(test_y_data)[:, :cut_num]
         },
         "blue_train_data": {
-            "x_data": np.array(train_x_data)[:, :, :cut_num],
-            "y_data": np.array(train_y_data)[:, :cut_num]
+            "x_data": np.array(train_x_data)[:, :, cut_num:cut_num+1],
+            "y_data": np.array(train_y_data)[:, cut_num:cut_num+1]
         },
         "blue_test_data": {
-            "x_data": np.array(test_x_data)[:, :, :cut_num],
-            "y_data": np.array(test_y_data)[:, :cut_num]
+            "x_data": np.array(test_x_data)[:, :, cut_num:cut_num+1],
+            "y_data": np.array(test_y_data)[:, cut_num:cut_num+1]
         }
     }
 
 
-def train_blue_ball_mode(train_x, train_y, test_x, test_y):
+def train_blue_ball_mode(train_x: np.ndarray, train_y, test_x, test_y):
     train_x = train_x - 1
     train_data_len = train_x.shape[0]
-    # train_x = train_x - 1
-    # train_y = train_y - 1
-    # train_data_len = train_x.shape[0]
+    train_x = train_x.reshape(len(train_x), windows_size)
+    train_y = tf.keras.utils.to_categorical(
+        train_y - 1,
+        num_classes=model_args["model_args"]["blue_n_class"]
+    )
 
-    # test_x = test_x - 1
-    # test_y = test_y - 1
-    # test_data_len = test_x.shape[0]
+    test_x = test_x - 1
+    test_data_len = test_x.shape[0]
+    test_x = test_x.reshape(len(test_x), windows_size)
+    test_y = tf.keras.utils.to_categorical(
+        test_y - 1,
+        num_classes=model_args["model_args"]["blue_n_class"]
+    )
 
     with tf.compat.v1.Session() as session:
         blue_ball_model = SignalLstmModel(
@@ -110,6 +116,33 @@ def train_blue_ball_mode(train_x, train_y, test_x, test_y):
                 )
                 if i % 100 == 0:
                     print("epoch: {}, loss: {}".format(epoch, loss_))
+        saver = tf.compat.v1.train.Saver()
+        saver.save(session, "./output/blue_mode/")
+        # 测试
+        eval_d = {}
+        all_true_count = 1
+        for j in range(test_data_len):
+            true = test_y[j:(j + 1), :]
+            pred = session.run(
+                blue_ball_model.pred_label,
+                feed_dict={
+                    "inputs:0": test_x[j:(j + 1), :]
+                })
+
+            count = np.sum(true == pred + 1)
+            all_true_count += count
+            if count in eval_d:
+                eval_d[count] += 1
+            else:
+                eval_d[count] = 1
+        for k, v in eval_d.items():
+            print("命中{}个球，{}期，占比: {}%".format(
+                k+1, v, round(v * 100 / test_data_len, 2)))
+        print(
+            "整体准确率: {}%".format(
+                round(all_true_count * 100 / test_data_len, 2)
+            )
+        )
 
 
 if __name__ == '__main__':
