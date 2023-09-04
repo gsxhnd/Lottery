@@ -1,4 +1,4 @@
-model_args = {
+model_args: dict[str, dict] = {
     "model_args": {
         "windows_size": 3,
         "batch_size": 1,
@@ -25,7 +25,7 @@ model_args = {
         "blue_epsilon": 1e-08
     },
     "path": {
-        "red":  "./output/red_ball_model/",
+        "red": "./output/red_ball_model/",
         "blue": "./output/blue_ball_model/",
     }
 }

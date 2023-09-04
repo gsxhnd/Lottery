@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class SimpleLstmModel():
+class SignalLstmModel():
     def __init__(self,
                  batch_size,
                  n_class, w_size,

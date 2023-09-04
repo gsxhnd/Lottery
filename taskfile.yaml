@@ -9,6 +9,9 @@ tasks:
   mod:
     cmds:
       - pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+  train:
+    cmds:
+      - python src/train.py
   clean:
     cmds:
       - rm -rf ./data

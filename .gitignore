@@ -6,3 +6,4 @@ venv
 input
 output
 data
+__pycache__
