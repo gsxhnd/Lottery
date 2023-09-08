@@ -22,5 +22,16 @@
 - 红球5（按摇号出现顺序）
 - 红球6（按摇号出现顺序）
 
-下载数据
-> make download_data
+## How to run
+
+```shell
+# 下载数据
+task data_download
+## 创建 python 虚拟环境
+python -m venv .venv
+source .venv/bin/activate 
+## 下载 python 需要的依赖
+task mod
+## 训练模型
+task train
+```
