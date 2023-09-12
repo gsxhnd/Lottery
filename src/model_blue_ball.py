@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class SignalLstmModel():
+class BlueBallModel():
     def __init__(self,
                  batch_size,
                  n_class, w_size,
@@ -55,5 +55,3 @@ class SignalLstmModel():
     @property
     def pred_label(self):
         return self._pred_label
-
-
