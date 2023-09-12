@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
-version: '3'
+version: "3"
 
 tasks:
   data_download:
@@ -17,4 +17,4 @@ tasks:
       - python src/train.py
   clean:
     cmds:
-      - rm -rf ./data
+      - rm -rf ./output/*
