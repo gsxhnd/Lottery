@@ -8,10 +8,6 @@ windows_size = model_args.get("model_args").get('windows_size')
 cut_num = 6
 
 
-def create_blue_ball_data():
-    pass
-
-
 def create_train_test_data() -> Dict[str, Dict[str, str]]:
     source_data = pd.read_csv("./data/source_data.txt",
                               usecols=range(15), sep=" ",
@@ -21,7 +17,6 @@ def create_train_test_data() -> Dict[str, Dict[str, str]]:
 
     train_data = train_data.iloc[:, 2:].values
     test_data = test_data.iloc[:, 2:].values
-    # logger.info("训练 集数据维度: {}".format(data.shape))
 
     train_x_data, train_y_data = [], []
     test_x_data, test_y_data = [], []

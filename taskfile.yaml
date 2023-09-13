@@ -14,7 +14,7 @@ tasks:
   train:
     desc: train model
     cmds:
-      - python src/train.py
+      - python src/train_blue_ball.py
   clean:
     cmds:
       - rm -rf ./output/*
