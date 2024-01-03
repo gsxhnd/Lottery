@@ -6,7 +6,7 @@ tasks:
     desc: download source data
     dir: data
     cmds:
-      - wget https://e.17500.cn/getData/ssq.TXT -O source_data.txt
+      - wget https://e.17500.cn/getData/ssq.TXT -O raw_data.txt
   mod:
     desc: download python dep require
     cmds:

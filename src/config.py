@@ -1,4 +1,5 @@
 model_args: dict[str, dict] = {
+    "raw_data": "./data/raw_data.txt",
     "model_args": {
         "windows_size": 3,
         "batch_size": 1,

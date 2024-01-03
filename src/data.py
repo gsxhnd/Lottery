@@ -5,11 +5,12 @@ from typing import Dict
 
 train_test_split = 0.7
 windows_size = model_args.get("model_args").get('windows_size')
+raw_data = model_args.get("raw_data")
 cut_num = 6
 
 
 def create_train_test_data() -> Dict[str, Dict[str, str]]:
-    source_data = pd.read_csv("./data/source_data.txt",
+    source_data = pd.read_csv(raw_data,
                               usecols=range(15), sep=" ",
                               header=None)
     train_data = source_data.iloc[:int(len(source_data) * train_test_split)]
