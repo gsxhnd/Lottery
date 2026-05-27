@@ -3,6 +3,7 @@ venv
 .venv
 *.iml
 .Ds_store
+.DS_Store
 input
 output
 /data

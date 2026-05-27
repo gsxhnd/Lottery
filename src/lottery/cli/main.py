@@ -36,7 +36,7 @@ def _train(args) -> int:
     """训练命令处理"""
     import torch
     import platform
-    from torch.utils.data import DataLoader
+    from torch.utils.data import DataLoader, random_split
     from lottery.config import load_config
     from lottery.data import load_lottery_data, LotteryDataset
     from lottery.models import LotteryLSTM
@@ -52,7 +52,9 @@ def _train(args) -> int:
     if torch.cuda.is_available():
         print(f"  CUDA 版本: {torch.version.cuda}")
         print(f"  GPU 设备: {torch.cuda.get_device_name(0)}")
-    print(f"  训练设备: {'cuda' if torch.cuda.is_available() else 'cpu'}")
+    mps_backend = getattr(torch.backends, "mps", None)
+    mps_available = mps_backend is not None and mps_backend.is_available()
+    print(f"  MPS 可用: {mps_available}")
     print("=" * 50)
 
     config = load_config(args.config)
@@ -62,15 +64,33 @@ def _train(args) -> int:
     print(f"加载 {len(records)} 条记录")
 
     dataset = LotteryDataset(records, seq_len=10)
-    train_loader = DataLoader(
-        dataset, batch_size=config["training"]["batch_size"], shuffle=True
-    )
+    val_split = config["training"]["val_split"]
+    batch_size = config["training"]["batch_size"]
+
+    val_size = int(len(dataset) * val_split)
+    if 0 < val_size < len(dataset):
+        train_size = len(dataset) - val_size
+        train_dataset, val_dataset = random_split(
+            dataset,
+            [train_size, val_size],
+            generator=torch.Generator().manual_seed(42),
+        )
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        print(f"训练样本: {train_size}, 验证样本: {val_size}")
+    else:
+        train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        val_loader = None
+        print("验证集划分被跳过（val_split 导致验证样本为 0）")
 
     model = LotteryLSTM()
     trainer = Trainer(model, config)
+    print(f"训练设备: {trainer.device}")
 
     print(f"开始训练 {config['training']['epochs']} 轮...")
-    summary = trainer.train(train_loader, config["training"]["epochs"])
+    summary = trainer.train(
+        train_loader, config["training"]["epochs"], val_loader=val_loader
+    )
 
     model_path = save_model(model, config, summary, trainer.timestamp)
     print(f"模型已保存: {model_path}")

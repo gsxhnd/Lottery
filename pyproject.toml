@@ -11,6 +11,7 @@ dependencies = [
     "tensorboard>=2.15.0",
 ]
 
+
 [[tool.uv.index]]
 name = "pytorch-windows-cu130"
 url = "https://download.pytorch.org/whl/cu130"
@@ -26,6 +27,9 @@ torch = [
     { index = "pytorch-windows-cu130", marker = "sys_platform == 'win32'" },
     # { index = "pytorch-linux-cpu", marker = "sys_platform == 'linux'" },
 ]
+
+[tool.uv]
+package = true
 
 [project.scripts]
 lottery = "lottery.cli:main"
