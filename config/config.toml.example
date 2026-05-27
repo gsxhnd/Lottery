@@ -1,0 +1,15 @@
+# Lottery 配置文件示例
+
+[data]
+raw_file = "data/raw_ssq.txt"
+
+[output]
+base_dir = "output"
+models_dir = "output/models"
+logs_dir = "output/logs"
+summaries_dir = "output/summaries"
+
+[training]
+epochs = 100
+batch_size = 32
+learning_rate = 0.001

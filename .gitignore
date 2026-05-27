@@ -5,5 +5,9 @@ venv
 .Ds_store
 input
 output
-data
+/data
 __pycache__
+*.egg-info
+*.egg
+build/
+dist/
