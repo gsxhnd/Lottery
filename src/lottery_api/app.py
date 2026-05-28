@@ -17,7 +17,7 @@ from lottery_api.schemas import (
 from lottery_api.service import PredictionService
 
 _service: PredictionService | None = None
-_WEB_DIST_DIR = Path(__file__).resolve().parents[2] / "web" / "dist"
+_STATIC_DIR = Path(__file__).resolve().parents[2] / "static"
 
 
 def get_service() -> PredictionService:
@@ -110,11 +110,11 @@ def create_app(*, config_path: str | None = None) -> FastAPI:
     async def file_not_found_handler(_request, exc: FileNotFoundError):
         return JSONResponse(status_code=404, content={"detail": str(exc)})
 
-    if _WEB_DIST_DIR.is_dir():
-        app.mount("/assets", StaticFiles(directory=_WEB_DIST_DIR / "assets"), name="assets")
+    if _STATIC_DIR.is_dir():
+        app.mount("/assets", StaticFiles(directory=_STATIC_DIR / "assets"), name="assets")
 
         @app.get("/", include_in_schema=False)
         def web_ui() -> FileResponse:
-            return FileResponse(_WEB_DIST_DIR / "index.html")
+            return FileResponse(_STATIC_DIR / "index.html")
 
     return app

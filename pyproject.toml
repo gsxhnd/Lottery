@@ -42,6 +42,3 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lottery", "src/lottery_api"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/lottery_api/static" = "lottery_api/static"
