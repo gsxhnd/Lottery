@@ -3,7 +3,7 @@
 from collections.abc import Iterator
 from pathlib import Path
 
-from lottery.domain.types import LotteryRecord
+from lottery_data import LotteryRecord
 
 
 def parse_raw_line(line: str) -> LotteryRecord | None:

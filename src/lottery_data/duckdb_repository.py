@@ -1,38 +1,26 @@
-"""DuckDB 读写与 raw 同步"""
+"""DuckDB 开奖数据读写。"""
 
-from dataclasses import dataclass
 from pathlib import Path
 
 import duckdb
 
-from lottery.data.duckdb import schema
-from lottery.data.parser import iter_raw_records
-from lottery.domain.types import LotteryRecord
+from . import duckdb_queries as queries
+from .duckdb_connection import DuckDBConnectionFactory
+from .models import LotteryRecord, SyncResult
 
 
-@dataclass(frozen=True)
-class SyncResult:
-    """raw → DuckDB 同步结果"""
-
-    inserted: int
-    skipped: int
-    total_in_db: int
-    mode: str
-
-
-class LotteryDataStore:
-    """双色球开奖记录的 DuckDB 存储。"""
+class LotteryDuckDBRepository:
+    """双色球开奖记录的 DuckDB 仓储。"""
 
     def __init__(self, db_path: str | Path) -> None:
-        self.db_path = Path(db_path)
+        self._conn_factory = DuckDBConnectionFactory(db_path)
 
     def connect(self) -> duckdb.DuckDBPyConnection:
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        return duckdb.connect(str(self.db_path))
+        return self._conn_factory.connect()
 
     def ensure_schema(self, conn: duckdb.DuckDBPyConnection) -> None:
-        conn.execute(schema.CREATE_DRAWS_TABLE)
-        conn.execute(schema.CREATE_DRAWS_DATE_INDEX)
+        conn.execute(queries.CREATE_DRAWS_TABLE)
+        conn.execute(queries.CREATE_DRAWS_DATE_INDEX)
 
     def count(self, conn: duckdb.DuckDBPyConnection | None = None) -> int:
         own_conn = conn is None
@@ -40,21 +28,18 @@ class LotteryDataStore:
             conn = self.connect()
         try:
             self.ensure_schema(conn)
-            row = conn.execute(
-                f"SELECT COUNT(*) FROM {schema.DRAWS_TABLE}"
-            ).fetchone()
+            row = conn.execute(queries.COUNT_DRAWS).fetchone()
             return int(row[0]) if row else 0
         finally:
             if own_conn:
                 conn.close()
 
-    def sync_full(self, raw_file: str | Path) -> SyncResult:
-        """全量重建：清空表后从 raw 重新导入。"""
-        records = list(iter_raw_records(raw_file))
+    def sync_full(self, records: list[LotteryRecord]) -> SyncResult:
+        """全量重建：清空表后重新导入。"""
         conn = self.connect()
         try:
             self.ensure_schema(conn)
-            conn.execute(f"DELETE FROM {schema.DRAWS_TABLE}")
+            conn.execute(queries.DELETE_ALL_DRAWS)
             inserted = self._insert_records(conn, records)
             total = self.count(conn)
             return SyncResult(
@@ -66,21 +51,18 @@ class LotteryDataStore:
         finally:
             conn.close()
 
-    def sync_incremental(self, raw_file: str | Path) -> SyncResult:
+    def sync_incremental(self, records: list[LotteryRecord]) -> SyncResult:
         """增量同步：仅插入库中不存在的期号。"""
         conn = self.connect()
         try:
             self.ensure_schema(conn)
             existing = {
-                row[0]
-                for row in conn.execute(
-                    f"SELECT issue FROM {schema.DRAWS_TABLE}"
-                ).fetchall()
+                row[0] for row in conn.execute(queries.SELECT_EXISTING_ISSUES).fetchall()
             }
 
             to_insert: list[LotteryRecord] = []
             skipped = 0
-            for record in iter_raw_records(raw_file):
+            for record in records:
                 if record.issue in existing:
                     skipped += 1
                     continue
@@ -102,7 +84,7 @@ class LotteryDataStore:
         conn = self.connect()
         try:
             self.ensure_schema(conn)
-            rows = conn.execute(schema.SELECT_ALL_RECORDS).fetchall()
+            rows = conn.execute(queries.SELECT_ALL_RECORDS).fetchall()
             return [_row_to_record(row) for row in rows]
         finally:
             conn.close()
@@ -124,7 +106,7 @@ class LotteryDataStore:
             )
             for record in records
         ]
-        conn.executemany(schema.INSERT_DRAW, params)
+        conn.executemany(queries.INSERT_DRAW, params)
         return len(records)
 
 

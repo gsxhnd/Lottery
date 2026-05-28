@@ -3,7 +3,8 @@
 import torch
 
 from lottery.data import build_sequence_tensor, denormalize_prediction
-from lottery.domain.types import LotteryRecord, PredictionResult
+from lottery.domain.types import PredictionResult
+from lottery_data import LotteryRecord
 from lottery.models import LotteryLSTM
 
 DEFAULT_SEQ_LEN = 10

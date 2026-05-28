@@ -6,12 +6,12 @@ from .dataset import (
     denormalize_prediction,
     normalize_record,
 )
-from .duckdb import LotteryDataStore, SyncResult
 from .loader import load_lottery_data
 from .repository import get_data_store, load_lottery_records, sync_data
+from lottery_data import LotteryDuckDBRepository, SyncResult
 
 __all__ = [
-    "LotteryDataStore",
+    "LotteryDuckDBRepository",
     "LotteryDataset",
     "SyncResult",
     "build_sequence_tensor",

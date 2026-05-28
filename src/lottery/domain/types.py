@@ -1,16 +1,7 @@
 """核心领域对象定义"""
 
 from dataclasses import dataclass
-
-
-@dataclass
-class LotteryRecord:
-    """单期开奖记录"""
-
-    issue: str
-    date: str
-    red_balls: list[int]  # 排序后的红球
-    blue_ball: int
+from lottery_data import LotteryRecord
 
 
 @dataclass

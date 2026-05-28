@@ -2,7 +2,7 @@
 
 import torch
 from torch.utils.data import Dataset
-from lottery.domain.types import LotteryRecord
+from lottery_data import LotteryRecord
 
 RED_BALL_MAX = 33
 BLUE_BALL_MAX = 16
