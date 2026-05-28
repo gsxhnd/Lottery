@@ -4,13 +4,20 @@
 
 ```
 cli/main.py
- ├── config/loader.py     → load_config()
- ├── data/loader.py       → load_lottery_data()
- ├── data/dataset.py      → LotteryDataset
- ├── models/lstm.py       → LotteryLSTM
+ ├── config/loader.py        → load_config()
+ ├── cli/data.py             → data sync / status
+ ├── data/repository.py      → load_lottery_records(), sync_data()
+ ├── data/dataset.py         → LotteryDataset, LotteryDataset.from_config()
+ ├── models/lstm.py          → LotteryLSTM
  └── training/
-      ├── trainer.py      → Trainer
-      └── saver.py        → save_model()
+      ├── trainer.py         → Trainer
+      └── saver.py           → save_model()
+
+data/
+ ├── parser.py               → parse_raw_line(), iter_raw_records()
+ ├── loader.py               → load_lottery_data()  (raw 文件)
+ ├── duckdb/store.py         → LotteryDataStore
+ └── repository.py           → 统一读数与同步入口
 ```
 
 ---
@@ -27,7 +34,11 @@ cli/main.py
 
 ```python
 {
-    "data": {"raw_file": "data/raw_ssq.txt"},
+    "data": {
+        "raw_file": "data/raw_ssq.txt",
+        "db_file": "data/lottery.duckdb",
+        "source": "auto",
+    },
     "output": {
         "base_dir": "output",
         "models_dir": "output/models",
@@ -38,9 +49,22 @@ cli/main.py
         "epochs": 100,
         "batch_size": 32,
         "learning_rate": 0.001,
+        "val_split": 0.2,
     },
 }
 ```
+
+---
+
+## `data/parser.py`
+
+### `parse_raw_line(line: str) → LotteryRecord | None`
+
+- 解析单行；列不足或数字非法时返回 `None`
+
+### `iter_raw_records(file_path) → Iterator[LotteryRecord]`
+
+- 逐行迭代有效记录；文件不存在时 `FileNotFoundError`
 
 ---
 
@@ -48,9 +72,47 @@ cli/main.py
 
 ### `load_lottery_data(file_path: str) → list[LotteryRecord]`
 
-- 读取空格分隔的原始数据
-- 跳过不足 9 列的行
-- 解析期号、日期、红球（列 2-7）、蓝球（列 8）
+- 从原始文本加载全部记录（兼容接口）
+
+---
+
+## `data/duckdb/store.py`
+
+### `LotteryDataStore(db_path)`
+
+| 方法 | 说明 |
+|------|------|
+| `sync_full(raw_file)` | 清空表后全量导入，返回 `SyncResult` |
+| `sync_incremental(raw_file)` | 仅插入新 `issue` |
+| `fetch_records()` | 按期号升序返回 `list[LotteryRecord]` |
+| `count()` | 库内条数 |
+
+### `SyncResult`
+
+```python
+@dataclass
+class SyncResult:
+    inserted: int
+    skipped: int
+    total_in_db: int
+    mode: str  # "full" | "incremental"
+```
+
+---
+
+## `data/repository.py`
+
+### `sync_data(config, *, full=False) → SyncResult`
+
+- 从 `config["data"]["raw_file"]` 同步到 `config["data"]["db_file"]`
+
+### `load_lottery_records(config) → list[LotteryRecord]`
+
+- 按 `data.source` 从 DuckDB 或 raw 加载（见 [配置指南](./03_config.md)）
+
+### `get_data_store(config) → LotteryDataStore`
+
+- 根据配置构造存储实例
 
 ---
 
@@ -62,6 +124,10 @@ cli/main.py
 - `__getitem__(idx)` → `(features, target)`
   - `features`: `(seq_len, 7)` 归一化序列
   - `target`: `(7,)` 归一化下一期
+
+### `LotteryDataset.from_config(config, seq_len=10)`
+
+- 调用 `load_lottery_records(config)` 后构造 Dataset
 
 ---
 
@@ -119,9 +185,9 @@ Sigmoid
 
 ### `Trainer(model, config)`
 
-- 自动选择 device（cuda / cpu）
+- 自动选择 device（cuda / mps / cpu）
 - 创建 SummaryWriter，按时间戳命名日志目录
-- `train(loader, epochs) → dict` 返回 `{"final_loss", "epochs"}`
+- `train(loader, epochs, val_loader=None) → dict` 返回训练摘要
 
 ---
 
@@ -167,5 +233,6 @@ Sigmoid
 
 ### `main() → int`
 
+- `data` 子命令：DuckDB 同步与状态（见 `cli/data.py`）
 - `train` 子命令：完整训练流程
 - `predict` 子命令：加载模型、执行推理、输出 JSON 并保存摘要

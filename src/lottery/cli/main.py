@@ -16,6 +16,10 @@ def main() -> int:
     train_parser = subparsers.add_parser("train", help="训练模型")
     train_parser.add_argument("--config", type=str, help="配置文件路径")
 
+    from lottery.cli.data import register_data_commands
+
+    register_data_commands(subparsers)
+
     # predict 命令
     predict_parser = subparsers.add_parser("predict", help="执行推理")
     predict_parser.add_argument(
@@ -29,6 +33,10 @@ def main() -> int:
         return _train(args)
     elif args.command == "predict":
         return _predict(args)
+    elif args.command == "data":
+        from lottery.cli.data import run_data_command
+
+        return run_data_command(args)
     else:
         parser.print_help()
         return 1
@@ -40,7 +48,7 @@ def _train(args) -> int:
     import platform
     from torch.utils.data import DataLoader, random_split
     from lottery.config import load_config
-    from lottery.data import load_lottery_data, LotteryDataset
+    from lottery.data import LotteryDataset
     from lottery.models import LotteryLSTM
     from lottery.training import Trainer, save_model
 
@@ -61,11 +69,11 @@ def _train(args) -> int:
 
     config = load_config(args.config)
 
-    print(f"加载数据: {config['data']['raw_file']}")
-    records = load_lottery_data(config["data"]["raw_file"])
-    print(f"加载 {len(records)} 条记录")
-
-    dataset = LotteryDataset(records, seq_len=10)
+    data_source = config["data"].get("source", "auto")
+    db_file = config["data"].get("db_file", "data/lottery.duckdb")
+    print(f"数据源: {data_source} (raw={config['data']['raw_file']}, db={db_file})")
+    dataset = LotteryDataset.from_config(config, seq_len=10)
+    print(f"加载 {len(dataset.records)} 条记录")
     val_split = config["training"]["val_split"]
     batch_size = config["training"]["batch_size"]
 
@@ -107,7 +115,7 @@ def _predict(args) -> int:
     from datetime import datetime
 
     from lottery.config import load_config
-    from lottery.data import load_lottery_data
+    from lottery.data import load_lottery_records
     from lottery.inference import (
         DEFAULT_SEQ_LEN,
         load_model_artifact,
@@ -121,8 +129,7 @@ def _predict(args) -> int:
     model, artifact = load_model_artifact(args.model)
     model_dir = artifact.model_path
 
-    print(f"加载数据: {config['data']['raw_file']}")
-    records = load_lottery_data(config["data"]["raw_file"])
+    records = load_lottery_records(config)
     print(f"加载 {len(records)} 条记录")
 
     result = predict_next(

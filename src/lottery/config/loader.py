@@ -32,6 +32,8 @@ def _default_config() -> dict[str, Any]:
     return {
         "data": {
             "raw_file": "data/raw_ssq.txt",
+            "db_file": "data/lottery.duckdb",
+            "source": "auto",
         },
         "output": {
             "base_dir": "output",

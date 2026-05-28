@@ -5,6 +5,7 @@
 - ✅ 里程碑一：工程骨架
 - ✅ 里程碑二：最小训练闭环
 - ✅ 里程碑三：最小推理闭环
+- ✅ 数据层：DuckDB 管道（raw 清洗入库、增量同步、训练/推理读数）
 - ⬜ 里程碑四：特征扩展
 - ⬜ 里程碑五：工程完善
 
@@ -25,7 +26,7 @@
 
 跑通数据读取 → 样本构造 → 模型训练 → 产物输出的完整链路。
 
-- 从 `data/raw_ssq.txt` 读取双色球历史数据（仅使用前 9 列）
+- 从 `data/raw_ssq.txt` 读取双色球历史数据（仅使用前 9 列）；现可通过 DuckDB 持久化与增量同步（`lottery data sync`）
 - 定义 `LotteryRecord` 领域对象
 - 实现 `LotteryDataset`（PyTorch Dataset，`seq_len=10`）
 - 实现 `LotteryLSTM` 模型（7 维输入，64 维隐藏层，2 层 LSTM）
@@ -52,6 +53,16 @@
 - [ ] 扩展数据读取支持列 10-15（红球出球顺序）
 - [ ] 在配置中增加特征选择开关
 - [ ] 对比有无出球顺序的模型效果差异
+
+---
+
+## 数据层：DuckDB 管道 ✅
+
+- [x] `data/parser.py` 解析 raw 前 9 列
+- [x] `LotteryDataStore`：全量/增量同步至 `data/lottery.duckdb`
+- [x] `load_lottery_records()` + `data.source` 配置（`auto` / `duckdb` / `raw`）
+- [x] CLI：`lottery data sync` / `lottery data status`
+- [x] 训练：`LotteryDataset.from_config()`；推理与 API 共用 `load_lottery_records()`
 
 ---
 

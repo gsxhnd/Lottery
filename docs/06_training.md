@@ -4,10 +4,14 @@
 
 ```
 cli: _train()
+  → LotteryDataset.from_config(config)   # load_lottery_records()，优先 DuckDB
+  → DataLoader(...)
   → Trainer(model, config)
-  → trainer.train(train_loader, epochs)
+  → trainer.train(train_loader, epochs, val_loader=...)
   → save_model(...)
 ```
+
+数据需先 `uv run lottery data sync`（或 `source=raw` 且存在 `raw_ssq.txt`）。见 [数据管道](./05_data_pipeline.md)。
 
 ## Trainer 类
 

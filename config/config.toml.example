@@ -2,6 +2,9 @@
 
 [data]
 raw_file = "data/raw_ssq.txt"
+db_file = "data/lottery.duckdb"
+# source: raw | duckdb | auto（默认：有 DuckDB 数据则用库，否则读 raw）
+source = "auto"
 
 [output]
 base_dir = "output"

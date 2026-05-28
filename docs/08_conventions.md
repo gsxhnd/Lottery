@@ -15,7 +15,8 @@ src/lottery/
 ├── cli/         # argparse 命令行入口
 ├── config/      # TOML 配置加载与默认值
 ├── domain/      # dataclass 领域对象
-├── data/        # 原始数据解析 + PyTorch Dataset
+├── data/        # raw 解析、DuckDB 同步/查询、PyTorch Dataset
+│   └── duckdb/  # 表结构与 LotteryDataStore
 ├── models/      # LSTM 模型定义
 ├── training/    # 训练循环 + 模型保存
 └── inference/   # 推理执行
@@ -34,9 +35,19 @@ output/
 
 时间戳格式：`YYYYMMDD_HHMMSS`
 
+## 数据文件
+
+`data/` 目录被 gitignore，本地需自备：
+
+| 文件 | 说明 |
+|------|------|
+| `data/raw_ssq.txt` | 原始 SSQ 文本（[17500 数据源](https://data.17500.cn/ssq_asc.txt)） |
+| `data/lottery.duckdb` | 由 `uv run lottery data sync` 生成，训练默认读此库 |
+
 ## 验证
 
 - 冒烟测试：`uv run lottery --help`
+- 数据同步：`uv run lottery data sync --full` → `uv run lottery data status`
 - 训练测试：`uv run lottery train`
 - TensorBoard：`tensorboard --logdir=output/logs`
 

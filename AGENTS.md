@@ -10,7 +10,9 @@
 ## Verified Commands
 
 - `uv run lottery --help` — show CLI help.
-- `uv run lottery train` — run training (requires `data/raw_ssq.txt`).
+- `uv run lottery data sync` — ingest `data/raw_ssq.txt` into DuckDB (`data/lottery.duckdb`); `--full` rebuilds from scratch.
+- `uv run lottery data status` — show DuckDB row count and issue range.
+- `uv run lottery train` — run training (requires `data/raw_ssq.txt`; uses DuckDB when `data.source=auto` and DB has rows).
 - `uv run lottery train --config config/config.toml` — train with custom config.
 - `uv run lottery predict --model <path>` — load saved model and predict next draw (JSON + `output/summaries/`).
 - `uv run lottery-api` — start FastAPI prediction server (Web GUI at `/`, OpenAPI at `/docs`, default `http://127.0.0.1:8000`).
@@ -19,14 +21,15 @@
 ## Architecture
 
 Training flow is wired in `src/lottery/cli/main.py:_train()`:
-`load_config` → `load_lottery_data` → `LotteryDataset` → `DataLoader` → `LotteryLSTM` → `Trainer.train()` → `save_model`.
+`load_config` → `LotteryDataset.from_config()` (`load_lottery_records`, DuckDB when `source=auto`) → `DataLoader` → `LotteryLSTM` → `Trainer.train()` → `save_model`.
+Data ingest: `lottery data sync` → `data/duckdb/store.py` (`LotteryDataStore`). See `docs/05_data_pipeline.md`.
 
 Package layout, output directories, and data format: see `docs/08_conventions.md`.
 Module API signatures and dependency graph: see `docs/07_modules.md`.
 
 ## Important Constraints
 
-- `data/` is gitignored. Training requires a local `data/raw_ssq.txt` (space-separated SSQ records from https://data.17500.cn/ssq_asc.txt or https://data.17500.cn/ssq_desc.txt). Missing file → `FileNotFoundError`.
+- `data/` is gitignored. Need local `data/raw_ssq.txt` for sync; training uses DuckDB when `source=auto` and `data/lottery.duckdb` has rows (run `uv run lottery data sync` first). Missing raw on sync or `source=raw` → `FileNotFoundError`.
 - `config/config.toml` is optional. When absent, `config/loader.py` falls back to hardcoded defaults. Copy `config/config.toml.example` for reproducible settings.
 - Hardcoded parameters not yet in config: see `docs/08_conventions.md` "已知技术债" section.
 - PyTorch source varies by platform: CUDA 13.0 index on Windows, CPU index on Linux, default PyPI on macOS.

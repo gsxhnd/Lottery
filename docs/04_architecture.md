@@ -27,7 +27,7 @@
 ├─────────────────────────────────────────┤
 │   training          │    inference       │  业务层：训练执行 / 推理执行
 ├─────────────────────────────────────────┤
-│   models            │    data            │  能力层：模型定义 / 样本构造
+│   models            │    data            │  能力层：模型定义 / 解析·入库·样本
 ├─────────────────────────────────────────┤
 │   domain                                │  领域层：公共数据对象
 ├─────────────────────────────────────────┤
@@ -41,7 +41,7 @@
 |------|------|--------|
 | `config` | 加载、合并、校验配置 | 业务流程编排 |
 | `domain` | 定义公共数据对象 | IO 和命令调用 |
-| `data` | 解析原始数据、构造样本 | 模型训练控制 |
+| `data` | 解析 raw、DuckDB 同步、构造 PyTorch 样本 | 模型训练控制 |
 | `models` | 构建模型实例 | 命令参数解析 |
 | `training` | 执行训练、保存产物 | 直接处理 CLI 输入 |
 | `inference` | 加载模型、执行预测 | 训练阶段内部状态 |
@@ -54,44 +54,51 @@
 ```
 data/raw_ssq.txt
     │
-    ▼
-load_lottery_data()      ← data/loader.py
+    ▼  lottery data sync [--full]
+data/lottery.duckdb (draws)
+    │
+    ▼  load_lottery_records()     ← data/repository.py
     │  (list[LotteryRecord])
     ▼
-LotteryDataset            ← data/dataset.py
+LotteryDataset.from_config()      ← data/dataset.py
     │  (seq_len=10 滑动窗口)
     ▼
-DataLoader                ← PyTorch
+DataLoader                        ← PyTorch
     │  (batch_size=32)
     ▼
-LotteryLSTM               ← models/lstm.py
+LotteryLSTM                       ← models/lstm.py
     │  (input=7, hidden=64, layers=2)
     ▼
-Trainer.train()           ← training/trainer.py
+Trainer.train()                   ← training/trainer.py
     │  (MSE + Adam, TensorBoard)
     ▼
-save_model()              ← training/saver.py
+save_model()                      ← training/saver.py
     │  (model.pt + metadata.json)
     ▼
 output/models/{timestamp}/
     │
     ▼
-load_model_artifact()     ← inference/loader.py
+load_model_artifact()             ← inference/loader.py
     │
     ▼
-predict_next()            ← inference/predictor.py
+predict_next()                    ← inference/predictor.py
     │
     ▼
 output/summaries/{timestamp}_prediction.json
 ```
 
+`source=raw` 或 `auto` 且库为空时，`load_lottery_records()` 直接从 `raw_ssq.txt` 读取，跳过 DuckDB。
+
 ## 调用链路
 
 ```
+cli/main.py: data sync
+  ├── load_config()                     → config/loader.py
+  └── sync_data(config, full=...)       → data/repository.py → data/duckdb/store.py
+
 cli/main.py: _train()
   ├── load_config(config_path)          → config/loader.py
-  ├── load_lottery_data(raw_file)       → data/loader.py
-  ├── LotteryDataset(records, seq_len)  → data/dataset.py
+  ├── LotteryDataset.from_config()      → data/dataset.py → load_lottery_records()
   ├── DataLoader(dataset, batch_size)   → PyTorch
   ├── LotteryLSTM()                     → models/lstm.py
   ├── Trainer(model, config)            → training/trainer.py
@@ -100,7 +107,7 @@ cli/main.py: _train()
 cli/main.py: _predict()
   ├── load_config(config_path)          → config/loader.py
   ├── load_model_artifact(model_path)   → inference/loader.py
-  ├── load_lottery_data(raw_file)       → data/loader.py
+  ├── load_lottery_records(config)      → data/repository.py
   ├── predict_next(model, records, ...) → inference/predictor.py
   └── save_prediction(result, ...)      → inference/saver.py
 ```

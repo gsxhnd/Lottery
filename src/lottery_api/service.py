@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 from lottery.config import load_config
-from lottery.data import load_lottery_data
+from lottery.data import load_lottery_records
 from lottery.inference import (
     DEFAULT_SEQ_LEN,
     load_model_artifact,
@@ -20,7 +20,7 @@ class PredictionService:
     def __init__(self, config_path: str | None = None) -> None:
         self._config_path = config_path
         self._config = load_config(config_path)
-        self._records = load_lottery_data(self._config["data"]["raw_file"])
+        self._records = load_lottery_records(self._config)
         self._model: LotteryLSTM | None = None
         self._model_dir: str | None = None
         self._metadata: dict | None = None
@@ -35,7 +35,7 @@ class PredictionService:
 
     def reload_data(self) -> int:
         """重新读取历史开奖数据，返回记录条数。"""
-        self._records = load_lottery_data(self._config["data"]["raw_file"])
+        self._records = load_lottery_records(self._config)
         return len(self._records)
 
     def list_models(self) -> list[dict]:
