@@ -9,7 +9,7 @@ uv run lottery [command] [options]
 | 命令 | 说明 | 状态 |
 |------|------|------|
 | `train` | 训练模型 | ✅ 可用 |
-| `predict` | 执行推理 | ⬜ 占位 |
+| `predict` | 执行推理 | ✅ 可用 |
 
 ---
 
@@ -47,10 +47,30 @@ uv run lottery train --config prod.toml
 ## `predict` — 执行推理
 
 ```bash
-uv run lottery predict --model PATH
+uv run lottery predict --model PATH [--config PATH]
 ```
 
-> 当前为占位命令，将在里程碑三实现。
+### 参数
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `--model` | 是 | 模型产物目录，或 `model.pt` 文件路径 |
+| `--config` | 否 | TOML 配置文件路径，默认 `config/config.toml` |
+
+### 推理流程
+
+1. 加载配置（用于数据路径与输出目录）
+2. 加载 `model.pt` 与 `metadata.json`
+3. 读取历史数据，取最近 `seq_len=10` 期作为输入
+4. 执行前向推理并反归一化球号
+5. 打印 JSON 结果，并写入 `output/summaries/{timestamp}_prediction.json`
+
+### 示例
+
+```bash
+uv run lottery predict --model output/models/20250528_120000
+uv run lottery predict --model output/models/20250528_120000/model.pt
+```
 
 ---
 

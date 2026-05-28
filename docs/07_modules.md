@@ -85,6 +85,17 @@ class TrainingConfig:
 class ModelArtifact:
     model_path: str
     metadata: dict
+
+@dataclass
+class PredictionResult:
+    model_dir: str
+    model_timestamp: str | None
+    seq_len: int
+    input_issues: list[str]
+    last_issue: str
+    predicted_red_balls: list[int]
+    predicted_blue_ball: int
+    normalized: list[float]
 ```
 
 ---
@@ -114,6 +125,34 @@ Sigmoid
 
 ---
 
+## `inference/loader.py`
+
+### `load_model_artifact(model_path: str) → (LotteryLSTM, ModelArtifact)`
+
+- 解析 `--model` 为产物目录（目录或 `model.pt` 文件）
+- 加载 `metadata.json` 与 `model.pt`（state_dict）
+- 返回处于 `eval` 模式的模型实例
+
+---
+
+## `inference/predictor.py`
+
+### `predict_next(model, records, model_dir, metadata, seq_len=10) → PredictionResult`
+
+- 取最近 `seq_len` 期构造输入张量 `(1, seq_len, 7)`
+- 前向推理并反归一化为球号
+- 返回 `PredictionResult`（含输入期号窗口与预测结果）
+
+---
+
+## `inference/saver.py`
+
+### `save_prediction(result, summaries_dir, timestamp) → str`
+
+- 将 `PredictionResult.to_dict()` 写入 `output/summaries/{timestamp}_prediction.json`
+
+---
+
 ## `training/saver.py`
 
 ### `save_model(model, config, summary, timestamp) → str`
@@ -129,4 +168,4 @@ Sigmoid
 ### `main() → int`
 
 - `train` 子命令：完整训练流程
-- `predict` 子命令：占位，打印消息退出
+- `predict` 子命令：加载模型、执行推理、输出 JSON 并保存摘要

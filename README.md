@@ -8,7 +8,7 @@
 
 - ✅ 里程碑一：工程骨架
 - ✅ 里程碑二：最小训练闭环（LSTM 训练 + TensorBoard）
-- ⬜ 里程碑三：最小推理闭环
+- ✅ 里程碑三：最小推理闭环
 
 ## 快速开始
 
@@ -42,7 +42,7 @@ Lottery/
 │   ├── data/                # 数据处理
 │   ├── models/              # 模型定义
 │   ├── training/            # 训练流程
-│   └── inference/           # 推理执行（占位）
+│   └── inference/           # 推理执行
 ├── config/
 │   └── config.toml.example  # 配置示例
 ├── pyproject.toml

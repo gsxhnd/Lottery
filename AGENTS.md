@@ -12,7 +12,8 @@
 - `uv run lottery --help` — show CLI help.
 - `uv run lottery train` — run training (requires `data/raw_ssq.txt`).
 - `uv run lottery train --config config/config.toml` — train with custom config.
-- `uv run lottery predict --model <path>` — placeholder only; prints a message and exits.
+- `uv run lottery predict --model <path>` — load saved model and predict next draw (JSON + `output/summaries/`).
+- `uv run lottery-api` — start FastAPI prediction server (Web GUI at `/`, OpenAPI at `/docs`, default `http://127.0.0.1:8000`).
 - `tensorboard --logdir=output/logs` — view training logs.
 
 ## Architecture

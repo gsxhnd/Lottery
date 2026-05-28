@@ -74,6 +74,15 @@ save_model()              ← training/saver.py
     │  (model.pt + metadata.json)
     ▼
 output/models/{timestamp}/
+    │
+    ▼
+load_model_artifact()     ← inference/loader.py
+    │
+    ▼
+predict_next()            ← inference/predictor.py
+    │
+    ▼
+output/summaries/{timestamp}_prediction.json
 ```
 
 ## 调用链路
@@ -87,6 +96,13 @@ cli/main.py: _train()
   ├── LotteryLSTM()                     → models/lstm.py
   ├── Trainer(model, config)            → training/trainer.py
   └── save_model(model, config, ...)    → training/saver.py
+
+cli/main.py: _predict()
+  ├── load_config(config_path)          → config/loader.py
+  ├── load_model_artifact(model_path)   → inference/loader.py
+  ├── load_lottery_data(raw_file)       → data/loader.py
+  ├── predict_next(model, records, ...) → inference/predictor.py
+  └── save_prediction(result, ...)      → inference/saver.py
 ```
 
 ---

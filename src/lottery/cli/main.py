@@ -16,17 +16,19 @@ def main() -> int:
     train_parser = subparsers.add_parser("train", help="训练模型")
     train_parser.add_argument("--config", type=str, help="配置文件路径")
 
-    # predict 命令（占位）
+    # predict 命令
     predict_parser = subparsers.add_parser("predict", help="执行推理")
-    predict_parser.add_argument("--model", type=str, required=True, help="模型路径")
+    predict_parser.add_argument(
+        "--model", type=str, required=True, help="模型目录或 model.pt 路径"
+    )
+    predict_parser.add_argument("--config", type=str, help="配置文件路径")
 
     args = parser.parse_args()
 
     if args.command == "train":
         return _train(args)
     elif args.command == "predict":
-        print("推理功能将在里程碑三实现")
-        return 0
+        return _predict(args)
     else:
         parser.print_help()
         return 1
@@ -95,6 +97,49 @@ def _train(args) -> int:
     model_path = save_model(model, config, summary, trainer.timestamp)
     print(f"模型已保存: {model_path}")
     print(f"TensorBoard: tensorboard --logdir={config['output']['logs_dir']}")
+
+    return 0
+
+
+def _predict(args) -> int:
+    """推理命令处理"""
+    import json
+    from datetime import datetime
+
+    from lottery.config import load_config
+    from lottery.data import load_lottery_data
+    from lottery.inference import (
+        DEFAULT_SEQ_LEN,
+        load_model_artifact,
+        predict_next,
+        save_prediction,
+    )
+
+    config = load_config(args.config)
+
+    print(f"加载模型: {args.model}")
+    model, artifact = load_model_artifact(args.model)
+    model_dir = artifact.model_path
+
+    print(f"加载数据: {config['data']['raw_file']}")
+    records = load_lottery_data(config["data"]["raw_file"])
+    print(f"加载 {len(records)} 条记录")
+
+    result = predict_next(
+        model,
+        records,
+        model_dir=model_dir,
+        metadata=artifact.metadata,
+        seq_len=DEFAULT_SEQ_LEN,
+    )
+
+    print(json.dumps(result.to_dict(), indent=2, ensure_ascii=False))
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    summary_path = save_prediction(
+        result, config["output"]["summaries_dir"], timestamp=timestamp
+    )
+    print(f"推理结果已保存: {summary_path}")
 
     return 0
 
