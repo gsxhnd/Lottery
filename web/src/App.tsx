@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react"
+import * as d3 from "d3"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 type HealthResponse = { status: string; records: number; model_loaded: boolean }
 type ModelInfo = { id: string; path: string; timestamp?: string | null }
@@ -9,6 +10,15 @@ type PredictionResponse = {
   prediction: { red_balls: number[]; blue_ball: number }
   normalized: unknown
   summary_path?: string | null
+}
+type BallFrequency = { ball: number; count: number }
+type DrawRecord = { issue: string; date: string; red_balls: number[]; blue_ball: number; red_sum: number }
+type WinningStatsResponse = {
+  total_records: number
+  issue_range: { start: string | null; end: string | null }
+  red_frequencies: BallFrequency[]
+  blue_frequencies: BallFrequency[]
+  recent_draws: DrawRecord[]
 }
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
@@ -41,7 +51,92 @@ function Ball(props: { num?: number; type: "red" | "blue"; size?: "sm" | "md" | 
   )
 }
 
+function FrequencyChart(props: { data: BallFrequency[]; color: string; title: string }) {
+  const { data, color, title } = props
+  const ref = useRef<SVGSVGElement | null>(null)
+
+  useEffect(() => {
+    if (!ref.current || data.length === 0) return
+    const width = 720
+    const height = 260
+    const margin = { top: 24, right: 20, bottom: 40, left: 40 }
+    const svg = d3.select(ref.current)
+    svg.selectAll("*").remove()
+    svg.attr("viewBox", `0 0 ${width} ${height}`)
+
+    const x = d3
+      .scaleBand<number>()
+      .domain(data.map((d) => d.ball))
+      .range([margin.left, width - margin.right])
+      .padding(0.15)
+    const y = d3
+      .scaleLinear()
+      .domain([0, d3.max(data, (d: BallFrequency) => d.count) ?? 0])
+      .nice()
+      .range([height - margin.bottom, margin.top])
+
+    svg
+      .append("g")
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(x).tickValues(data.filter((d) => d.ball % 2 === 1).map((d) => d.ball)).tickSizeOuter(0))
+    svg.append("g").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(5).tickSizeOuter(0))
+
+    svg
+      .append("g")
+      .selectAll("rect")
+      .data(data)
+      .join("rect")
+      .attr("x", (d: BallFrequency) => x(d.ball) ?? 0)
+      .attr("y", (d: BallFrequency) => y(d.count))
+      .attr("width", x.bandwidth())
+      .attr("height", (d: BallFrequency) => y(0) - y(d.count))
+      .attr("rx", 5)
+      .attr("fill", color)
+
+    svg.append("text").attr("x", margin.left).attr("y", 16).attr("fill", "#f4f6fb").attr("font-size", 13).attr("font-weight", 600).text(title)
+  }, [data, color, title])
+
+  return <svg ref={ref} className="chart-svg" />
+}
+
+function RecentTrendChart(props: { draws: DrawRecord[] }) {
+  const { draws } = props
+  const ref = useRef<SVGSVGElement | null>(null)
+
+  useEffect(() => {
+    if (!ref.current || draws.length === 0) return
+    const width = 720
+    const height = 280
+    const margin = { top: 24, right: 20, bottom: 40, left: 44 }
+    const indexed = draws.map((d, i) => ({ ...d, index: i + 1 }))
+    const svg = d3.select(ref.current)
+    svg.selectAll("*").remove()
+    svg.attr("viewBox", `0 0 ${width} ${height}`)
+
+    const x = d3.scaleLinear().domain([1, indexed.length]).range([margin.left, width - margin.right])
+    const y = d3
+      .scaleLinear()
+      .domain(d3.extent(indexed, (d: (typeof indexed)[number]) => d.red_sum) as [number, number])
+      .nice()
+      .range([height - margin.bottom, margin.top])
+
+    svg.append("g").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(8))
+    svg.append("g").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(6))
+
+    const line = d3
+      .line<(typeof indexed)[number]>()
+      .x((d) => x(d.index))
+      .y((d) => y(d.red_sum))
+      .curve(d3.curveMonotoneX)
+
+    svg.append("path").datum(indexed).attr("fill", "none").attr("stroke", "#8b5cf6").attr("stroke-width", 2.5).attr("d", line)
+  }, [draws])
+
+  return <svg ref={ref} className="chart-svg" />
+}
+
 export default function App() {
+  const [page, setPage] = useState<"predict" | "viz">("predict")
   const [healthStatus, setHealthStatus] = useState<"loading" | "ok" | "error">("loading")
   const [healthText, setHealthText] = useState("连接中…")
   const [models, setModels] = useState<ModelInfo[]>([])
@@ -52,6 +147,10 @@ export default function App() {
   const [isPredicting, setIsPredicting] = useState(false)
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null)
   const [toast, setToast] = useState<{ message: string; isError: boolean } | null>(null)
+  const [vizStats, setVizStats] = useState<WinningStatsResponse | null>(null)
+  const [vizLoading, setVizLoading] = useState(false)
+  const [vizError, setVizError] = useState<string | null>(null)
+  const [recentLimit, setRecentLimit] = useState(120)
   const modelItems = Array.isArray(models) ? models : []
 
   const canPredict = useMemo(() => Boolean(loadedModelPath || selectedModelPath) && !isPredicting, [isPredicting, loadedModelPath, selectedModelPath])
@@ -142,12 +241,31 @@ export default function App() {
     }
   }
 
+  const loadVizData = async (limit: number) => {
+    setVizLoading(true)
+    setVizError(null)
+    try {
+      const data = await api<WinningStatsResponse>(`/data/winning-stats?recent_limit=${limit}`)
+      setVizStats(data)
+    } catch (error) {
+      setVizError(error instanceof Error ? error.message : "加载可视化数据失败")
+    } finally {
+      setVizLoading(false)
+    }
+  }
+
   useEffect(() => {
     void (async () => {
       await refreshHealth()
       await Promise.all([loadModels(), fetchCurrentModel()])
     })()
   }, [])
+
+  useEffect(() => {
+    if (page === "viz" && !vizStats && !vizLoading) {
+      void loadVizData(recentLimit)
+    }
+  }, [page, vizLoading, vizStats, recentLimit])
 
   return (
     <>
@@ -171,13 +289,16 @@ export default function App() {
               <span className="pill__dot" />
               <span className="pill__text">{healthText}</span>
             </div>
+            <button className="btn btn--ghost" type="button" onClick={() => setPage(page === "predict" ? "viz" : "predict")}>
+              {page === "predict" ? "数据可视化" : "返回预测"}
+            </button>
             <a className="link-api" href="/docs" target="_blank" rel="noreferrer">
               API 文档
             </a>
           </div>
         </header>
 
-        <main className="layout">
+        {page === "predict" ? <main className="layout">
           <aside className="panel panel--models">
             <div className="panel__head">
               <h2>模型</h2>
@@ -292,7 +413,51 @@ export default function App() {
               </button>
             </div>
           </section>
-        </main>
+        </main> : (
+          <main>
+            <section className="panel">
+              <div className="viz-actions">
+                <select value={recentLimit} onChange={(e) => setRecentLimit(Number(e.target.value))}>
+                  <option value={60}>最近 60 期</option>
+                  <option value={120}>最近 120 期</option>
+                  <option value={240}>最近 240 期</option>
+                </select>
+                <button type="button" className="btn btn--secondary" onClick={() => void loadVizData(recentLimit)} disabled={vizLoading}>
+                  {vizLoading ? "加载中..." : "刷新可视化"}
+                </button>
+              </div>
+              {vizError ? <p className="status error">{vizError}</p> : null}
+              {!vizError && vizLoading ? <p className="status">正在读取 DuckDB 数据...</p> : null}
+              {vizStats ? (
+                <>
+                  <section className="summary-grid">
+                    <article className="card">
+                      <h3>总记录数</h3>
+                      <p>{vizStats.total_records.toLocaleString()}</p>
+                    </article>
+                    <article className="card">
+                      <h3>起始期号</h3>
+                      <p>{vizStats.issue_range.start ?? "-"}</p>
+                    </article>
+                    <article className="card">
+                      <h3>最新期号</h3>
+                      <p>{vizStats.issue_range.end ?? "-"}</p>
+                    </article>
+                  </section>
+                  <section className="card chart-card">
+                    <FrequencyChart data={vizStats.red_frequencies} color="#ef4444" title="红球号码出现频次（01-33）" />
+                  </section>
+                  <section className="card chart-card">
+                    <FrequencyChart data={vizStats.blue_frequencies} color="#3b82f6" title="蓝球号码出现频次（01-16）" />
+                  </section>
+                  <section className="card chart-card">
+                    <RecentTrendChart draws={vizStats.recent_draws} />
+                  </section>
+                </>
+              ) : null}
+            </section>
+          </main>
+        )}
       </div>
 
       {toast ? (

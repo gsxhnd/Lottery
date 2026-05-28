@@ -638,3 +638,102 @@ body {
     transform: scale(0.5);
   }
 }
+
+.viz-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+}
+
+.viz-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 20px;
+}
+
+.viz-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.viz-header p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+
+.viz-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-actions select,
+.viz-actions button {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.viz-actions a {
+  color: #a78bfa;
+  text-decoration: none;
+}
+
+.status {
+  color: var(--text-muted);
+}
+
+.status.error {
+  color: #fca5a5;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.card h3 {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.card p {
+  margin: 10px 0 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.chart-card {
+  margin-top: 14px;
+}
+
+.chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .viz-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

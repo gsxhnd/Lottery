@@ -5,6 +5,7 @@ from pathlib import Path
 
 from lottery.config import load_config
 from lottery.data import load_lottery_records
+from lottery.data.repository import get_data_store
 from lottery.inference import (
     DEFAULT_SEQ_LEN,
     load_model_artifact,
@@ -24,6 +25,7 @@ class PredictionService:
         self._model: LotteryLSTM | None = None
         self._model_dir: str | None = None
         self._metadata: dict | None = None
+        self._store = get_data_store(self._config)
 
     @property
     def config(self) -> dict:
@@ -37,6 +39,52 @@ class PredictionService:
         """重新读取历史开奖数据，返回记录条数。"""
         self._records = load_lottery_records(self._config)
         return len(self._records)
+
+    def get_winning_stats(self, *, recent_limit: int = 120) -> dict:
+        """从 DuckDB 读取可视化所需统计数据。"""
+        records = self._store.fetch_records()
+        if not records:
+            return {
+                "total_records": 0,
+                "issue_range": {"start": None, "end": None},
+                "red_frequencies": [],
+                "blue_frequencies": [],
+                "recent_draws": [],
+            }
+
+        red_counts = {ball: 0 for ball in range(1, 34)}
+        blue_counts = {ball: 0 for ball in range(1, 17)}
+
+        for record in records:
+            for ball in record.red_balls:
+                red_counts[ball] += 1
+            blue_counts[record.blue_ball] += 1
+
+        recent_records = records[-max(recent_limit, 1) :]
+        recent_draws = [
+            {
+                "issue": record.issue,
+                "date": record.date,
+                "red_balls": record.red_balls,
+                "blue_ball": record.blue_ball,
+                "red_sum": sum(record.red_balls),
+            }
+            for record in recent_records
+        ]
+
+        return {
+            "total_records": len(records),
+            "issue_range": {"start": records[0].issue, "end": records[-1].issue},
+            "red_frequencies": [
+                {"ball": ball, "count": count}
+                for ball, count in sorted(red_counts.items())
+            ],
+            "blue_frequencies": [
+                {"ball": ball, "count": count}
+                for ball, count in sorted(blue_counts.items())
+            ],
+            "recent_draws": recent_draws,
+        }
 
     def list_models(self) -> list[dict]:
         """列出 models 目录下所有可用模型产物。"""

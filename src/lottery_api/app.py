@@ -9,10 +9,13 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from lottery_api.schemas import (
+    BallFrequencyItem,
+    DrawRecord,
     LoadModelRequest,
     ModelInfo,
     PredictRequest,
     PredictionResponse,
+    WinningStatsResponse,
 )
 from lottery_api.service import PredictionService
 
@@ -105,6 +108,23 @@ def create_app(*, config_path: str | None = None) -> FastAPI:
     def reload_data() -> dict:
         count = get_service().reload_data()
         return {"records": count}
+
+    @app.get("/data/winning-stats", response_model=WinningStatsResponse)
+    def winning_stats(
+        recent_limit: Annotated[
+            int, Query(ge=10, le=500, description="最近开奖条数")
+        ] = 120,
+    ) -> WinningStatsResponse:
+        payload = get_service().get_winning_stats(recent_limit=recent_limit)
+        return WinningStatsResponse(
+            total_records=payload["total_records"],
+            issue_range=payload["issue_range"],
+            red_frequencies=[BallFrequencyItem(**item) for item in payload["red_frequencies"]],
+            blue_frequencies=[
+                BallFrequencyItem(**item) for item in payload["blue_frequencies"]
+            ],
+            recent_draws=[DrawRecord(**item) for item in payload["recent_draws"]],
+        )
 
     @app.exception_handler(FileNotFoundError)
     async def file_not_found_handler(_request, exc: FileNotFoundError):

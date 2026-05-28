@@ -39,3 +39,30 @@ class PredictionResponse(BaseModel):
     prediction: dict
     normalized: list[float]
     summary_path: str | None = None
+
+
+class DrawRecord(BaseModel):
+    """单期开奖记录（供可视化接口使用）"""
+
+    issue: str
+    date: str
+    red_balls: list[int]
+    blue_ball: int
+    red_sum: int
+
+
+class BallFrequencyItem(BaseModel):
+    """号码频次"""
+
+    ball: int
+    count: int
+
+
+class WinningStatsResponse(BaseModel):
+    """DuckDB 开奖统计数据"""
+
+    total_records: int
+    issue_range: dict[str, str | None]
+    red_frequencies: list[BallFrequencyItem]
+    blue_frequencies: list[BallFrequencyItem]
+    recent_draws: list[DrawRecord]
