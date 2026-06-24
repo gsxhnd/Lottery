@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router"
+import { HashRouter, Navigate, Route, Routes, useLocation } from "react-router"
 
 import { AppShell } from "@/components/layout/AppShell"
 import { useLotteryDashboard } from "@/hooks/useLotteryDashboard"
@@ -75,8 +75,8 @@ function RoutedApp() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <RoutedApp />
-    </BrowserRouter>
+    </HashRouter>
   )
 }
