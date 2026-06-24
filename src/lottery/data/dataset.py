@@ -25,14 +25,46 @@ def build_sequence_tensor(
     return torch.tensor(features, dtype=torch.float32).unsqueeze(0)
 
 
+def denormalize_red_balls(normalized_red: list[float]) -> list[int]:
+    """将 6 维归一化红球输出还原为不重复的红球号（升序）。"""
+    preferred = [
+        max(1, min(RED_BALL_MAX, round(v * RED_BALL_MAX)))
+        for v in normalized_red[:6]
+    ]
+    order = sorted(range(6), key=lambda i: normalized_red[i], reverse=True)
+    chosen: dict[int, int] = {}
+    used: set[int] = set()
+
+    for i in order:
+        ball = preferred[i]
+        if ball not in used:
+            used.add(ball)
+            chosen[i] = ball
+            continue
+        for delta in range(1, RED_BALL_MAX):
+            for candidate in (ball - delta, ball + delta):
+                if 1 <= candidate <= RED_BALL_MAX and candidate not in used:
+                    used.add(candidate)
+                    chosen[i] = candidate
+                    break
+            else:
+                continue
+            break
+        else:
+            for candidate in range(1, RED_BALL_MAX + 1):
+                if candidate not in used:
+                    used.add(candidate)
+                    chosen[i] = candidate
+                    break
+
+    return sorted(chosen[i] for i in range(6))
+
+
 def denormalize_prediction(normalized: list[float]) -> tuple[list[int], int]:
     """将模型输出的归一化向量还原为球号。"""
-    red = [
-        max(1, min(RED_BALL_MAX, round(v * RED_BALL_MAX)))
-        for v in normalized[:6]
-    ]
+    red = denormalize_red_balls(normalized[:6])
     blue = max(1, min(BLUE_BALL_MAX, round(normalized[6] * BLUE_BALL_MAX)))
-    return sorted(red), blue
+    return red, blue
 
 
 class LotteryDataset(Dataset):

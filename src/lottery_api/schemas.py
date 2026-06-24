@@ -30,14 +30,26 @@ class PredictRequest(BaseModel):
     )
 
 
+class PredictionCandidate(BaseModel):
+    """单组备选号码"""
+
+    red_balls: list[int]
+    blue_ball: int
+    hit_rate: float = Field(description="综合命中率（%），基于历史回测")
+    red_hit_avg: float = Field(description="红球平均命中个数")
+    blue_hit_rate: float = Field(description="蓝球命中率（%）")
+
+
 class PredictionResponse(BaseModel):
     """预测结果"""
 
     model_dir: str
     model_timestamp: str | None
     input_window: dict
-    prediction: dict
+    candidates: list[PredictionCandidate]
+    prediction: PredictionCandidate
     normalized: list[float]
+    backtest_periods: int = Field(description="命中率回测使用的历史期数")
     summary_path: str | None = None
 
 

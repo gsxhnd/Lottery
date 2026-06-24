@@ -95,21 +95,34 @@ export function PredictPage(props: PredictPageProps) {
           </div>
         ) : (
           <div className="result">
-            <div className="balls-row">
-              <div className="balls-group">
-                <span className="balls-label">红球</span>
-                <div className="balls">
-                  {prediction.prediction.red_balls.map((n, i) => (
-                    <Ball key={`${n}-${i}`} num={n} type="red" size="md" delay={i * 60} />
-                  ))}
+            <div className="candidates">
+              {(prediction.candidates ?? [prediction.prediction]).map((candidate, index) => (
+                <div key={index} className={`candidate-row ${index === 0 ? "candidate-row--primary" : ""}`}>
+                  <div className="candidate-row__head">
+                    <span className="candidate-row__label">{index === 0 ? "主推" : `备选 ${index}`}</span>
+                    <span className="candidate-row__hit-rate">{`命中率 ${candidate.hit_rate.toFixed(1)}%`}</span>
+                  </div>
+                  <p className="candidate-row__hit-detail">
+                    {`红球均中 ${candidate.red_hit_avg.toFixed(2)} 个 · 蓝球 ${candidate.blue_hit_rate.toFixed(1)}%`}
+                  </p>
+                  <div className="balls-row">
+                    <div className="balls-group">
+                      <span className="balls-label">红球</span>
+                      <div className="balls">
+                        {candidate.red_balls.map((n, i) => (
+                          <Ball key={`${index}-red-${n}-${i}`} num={n} type="red" size="md" delay={i * 60} />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="balls-group balls-group--blue">
+                      <span className="balls-label">蓝球</span>
+                      <div className="balls">
+                        <Ball num={candidate.blue_ball} type="blue" size="md" delay={360} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="balls-group balls-group--blue">
-                <span className="balls-label">蓝球</span>
-                <div className="balls">
-                  <Ball num={prediction.prediction.blue_ball} type="blue" size="md" delay={360} />
-                </div>
-              </div>
+              ))}
             </div>
             <dl className="meta-grid">
               <div>
@@ -127,6 +140,10 @@ export function PredictPage(props: PredictPageProps) {
               <div>
                 <dt>最近一期</dt>
                 <dd>{prediction.input_window.last_issue}</dd>
+              </div>
+              <div>
+                <dt>回测期数</dt>
+                <dd>{prediction.backtest_periods > 0 ? `${prediction.backtest_periods} 期` : "—"}</dd>
               </div>
             </dl>
             <details className="details">

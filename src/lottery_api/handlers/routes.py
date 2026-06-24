@@ -58,14 +58,7 @@ def register_routes(app: FastAPI, get_service) -> None:
         except RuntimeError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
-        return PredictionResponse(
-            model_dir=payload["model_dir"],
-            model_timestamp=payload["model_timestamp"],
-            input_window=payload["input_window"],
-            prediction=payload["prediction"],
-            normalized=payload["normalized"],
-            summary_path=payload.get("summary_path"),
-        )
+        return PredictionResponse(**payload)
 
     @app.post("/predict/quick", response_model=PredictionResponse)
     def predict_quick(
