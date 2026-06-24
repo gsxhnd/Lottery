@@ -602,26 +602,6 @@ body {
   color: var(--success);
   font-family: var(--mono);
 }
-.toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 90vw;
-  padding: 12px 20px;
-  font-size: 0.9rem;
-  background: var(--surface-hover);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(16px);
-  z-index: 100;
-  animation: fadeUp 0.25s ease;
-}
-.toast--error {
-  border-color: rgba(248, 113, 113, 0.4);
-  color: #fecaca;
-}
 .hidden {
   display: none !important;
 }

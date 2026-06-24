@@ -12,7 +12,7 @@ function RoutedApp() {
   const location = useLocation()
 
   useEffect(() => {
-    if ((location.pathname === "/analytics" || location.pathname === "/data") && !state.vizStats && !state.vizLoading) {
+    if ((location.pathname === "/analytics" || location.pathname === "/data") && !state.vizStats && !state.vizLoading && !state.vizError) {
       void state.loadVizData(state.recentLimit)
     }
   }, [location.pathname, state])
@@ -49,7 +49,6 @@ function RoutedApp() {
               <AnalyticsPage
                 recentLimit={state.recentLimit}
                 vizLoading={state.vizLoading}
-                vizError={state.vizError}
                 vizStats={state.vizStats}
                 setRecentLimit={state.setRecentLimit}
                 loadVizData={state.loadVizData}
@@ -62,7 +61,6 @@ function RoutedApp() {
               <DataRecordsPage
                 recentLimit={state.recentLimit}
                 vizLoading={state.vizLoading}
-                vizError={state.vizError}
                 vizStats={state.vizStats}
                 setRecentLimit={state.setRecentLimit}
                 loadVizData={state.loadVizData}
@@ -71,12 +69,6 @@ function RoutedApp() {
           />
         </Route>
       </Routes>
-
-      {state.toast ? (
-        <div className={`toast ${state.toast.isError ? "toast--error" : ""}`} role="status" aria-live="polite">
-          {state.toast.message}
-        </div>
-      ) : null}
     </>
   )
 }

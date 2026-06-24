@@ -1,47 +1,43 @@
 # AGENTS.md
 
-## Workflow
+## Toolchains
 
-- Use `uv`, not `pip` or `poetry`.
-- Python 3.12 (`.python-version`); install deps with `uv sync`.
-- CLI entrypoint: `uv run lottery ...` (wired via `pyproject.toml` `[project.scripts]` → `lottery.cli:main`).
-- Full engineering conventions: see `docs/08_conventions.md`.
+- Python uses `uv`, not `pip` or `poetry`; `.python-version` is `3.12`, setup with `uv sync`.
+- Python scripts are `uv run lottery ...` (`lottery.cli:main`) and `uv run lottery-api` (`lottery_api.__main__:main`) from `pyproject.toml`.
+- Frontend is a separate npm app in `web/` with `package-lock.json`; run npm commands from `web/`.
 
-## Verified Commands
+## Commands
 
-- `uv run lottery --help` — show CLI help.
-- `uv run lottery data sync` — ingest `data/raw_ssq.txt` into DuckDB (`data/lottery.duckdb`); `--full` rebuilds from scratch.
-- `uv run lottery data status` — show DuckDB row count and issue range.
-- `uv run lottery train` — run training (requires `data/raw_ssq.txt`; uses DuckDB when `data.source=auto` and DB has rows).
-- `uv run lottery train --config config/config.toml` — train with custom config.
-- `uv run lottery predict --model <path>` — load saved model and predict next draw (JSON + `output/summaries/`).
-- `uv run lottery-api` — start FastAPI prediction server (Web GUI at `/`, OpenAPI at `/docs`, default `http://127.0.0.1:8000`).
-- `tensorboard --logdir=output/logs` — view training logs.
+- `uv run lottery --help` is the fastest Python smoke test.
+- `uv run lottery data sync --full` imports `data/raw_ssq.txt` into `data/lottery.duckdb`; omit `--full` for incremental sync.
+- `uv run lottery data status` verifies DuckDB row count and issue range.
+- `uv run lottery train [--config PATH]` trains and writes `output/models/{timestamp}/` plus TensorBoard logs.
+- `uv run lottery predict --model <model-dir-or-model.pt> [--config PATH]` prints JSON and writes `output/summaries/`.
+- `uv run lottery-api [--config PATH] [--reload]` starts FastAPI at `127.0.0.1:8000` with `/docs` and static UI if `static/` exists.
+- In `web/`: `npm run dev`, `npm run build`, `npm run lint`, `npm run typecheck`, `npm run format`.
 
 ## Architecture
 
-Training flow is wired in `src/lottery/cli/main.py:_train()`:
-`load_config` → `LotteryDataset.from_config()` (`load_lottery_records`, DuckDB when `source=auto`) → `DataLoader` → `LotteryLSTM` → `Trainer.train()` → `save_model`.
-Data ingest: `lottery data sync` → `data/duckdb/store.py` (`LotteryDataStore`). See `docs/05_data_pipeline.md`.
+- Training is wired in `src/lottery/cli/main.py:_train()`: `load_config` → `LotteryDataset.from_config(..., seq_len=10)` → `DataLoader` → `LotteryLSTM()` → `Trainer.train()` → `save_model`.
+- Data access goes through `src/lottery/data/repository.py`; `source=auto` uses DuckDB when it exists and has rows, otherwise falls back to raw text.
+- DuckDB implementation is in `src/lottery_data/`; older docs may still mention `src/lottery/data/duckdb/`.
+- FastAPI lives in `src/lottery_api/`; `PredictionService` caches loaded records and model state, and `/data/reload` refreshes records.
+- The Vite app in `web/` builds to repo-root `static/`, which `lottery-api` serves at `/` and `/assets`.
 
-Package layout, output directories, and data format: see `docs/08_conventions.md`.
-Module API signatures and dependency graph: see `docs/07_modules.md`.
+## Local Data And Config
 
-## Important Constraints
+- `data/`, `output/`, and `static/` are gitignored generated/local state; do not assume they exist in a fresh checkout.
+- `data/raw_ssq.txt` is required for sync and for raw fallback; README uses `curl -L "https://data.17500.cn/ssq_asc.txt" -o data/raw_ssq.txt`.
+- Default config path is `config/config.toml`; if missing, `src/lottery/config/loader.py` falls back to hardcoded defaults merged like `config/config.toml.example`.
+- `seq_len=10` in training/prediction and default `LotteryLSTM()` model dimensions are still hardcoded, not config-driven.
 
-- `data/` is gitignored. Need local `data/raw_ssq.txt` for sync; training uses DuckDB when `source=auto` and `data/lottery.duckdb` has rows (run `uv run lottery data sync` first). Missing raw on sync or `source=raw` → `FileNotFoundError`.
-- `config/config.toml` is optional. When absent, `config/loader.py` falls back to hardcoded defaults. Copy `config/config.toml.example` for reproducible settings.
-- Hardcoded parameters not yet in config: see `docs/08_conventions.md` "已知技术债" section.
-- PyTorch source varies by platform: CUDA 13.0 index on Windows, CPU index on Linux, default PyPI on macOS.
+## Validation Notes
 
-## Validation
+- There is no Python test/lint/typecheck config in this repo; use `uv run lottery --help` or a focused CLI/API run for backend smoke tests.
+- Frontend verification is available: `npm run lint`, `npm run typecheck`, and `npm run build` from `web/`.
+- For full-stack UI work, run `uv run lottery-api` and `npm run dev` from `web/`; Vite proxies API paths to `http://127.0.0.1:8000`.
 
-- No test suite, linter, formatter, or type checker is configured.
-- Smoke-test changes with `uv run lottery --help` or a training run.
+## Source Of Truth
 
-## Docs Trust Order
-
-When docs conflict with code, trust in this order:
-1. `src/lottery/` source code and `pyproject.toml`
-2. `AGENTS.md` (this file)
-3. `docs/` documentation
+- Trust executable config and source first: `pyproject.toml`, `web/package.json`, `src/lottery/`, `src/lottery_api/`, `src/lottery_data/`, then docs.
+- Detailed module/docs references are in `docs/07_modules.md` and `docs/08_conventions.md`, but verify stale paths against source before editing.

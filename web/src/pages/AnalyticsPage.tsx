@@ -7,14 +7,13 @@ import type { WinningStatsResponse } from "@/types/lottery"
 type AnalyticsPageProps = {
   recentLimit: number
   vizLoading: boolean
-  vizError: string | null
   vizStats: WinningStatsResponse | null
   setRecentLimit: (value: number) => void
   loadVizData: (limit: number) => Promise<void>
 }
 
 export function AnalyticsPage(props: AnalyticsPageProps) {
-  const { recentLimit, vizLoading, vizError, vizStats, setRecentLimit, loadVizData } = props
+  const { recentLimit, vizLoading, vizStats, setRecentLimit, loadVizData } = props
 
   return (
     <main>
@@ -29,8 +28,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
             {vizLoading ? "加载中..." : "刷新可视化"}
           </button>
         </div>
-        {vizError ? <p className="status error">{vizError}</p> : null}
-        {!vizError && vizLoading ? <p className="status">正在读取 DuckDB 数据...</p> : null}
+        {vizLoading ? <p className="status">正在读取 DuckDB 数据...</p> : null}
         {vizStats ? (
           <>
             <section className="summary-grid">

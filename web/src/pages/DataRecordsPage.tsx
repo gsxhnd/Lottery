@@ -5,7 +5,6 @@ import type { DrawRecord, WinningStatsResponse } from "@/types/lottery"
 type DataRecordsPageProps = {
   recentLimit: number
   vizLoading: boolean
-  vizError: string | null
   vizStats: WinningStatsResponse | null
   setRecentLimit: (value: number) => void
   loadVizData: (limit: number) => Promise<void>
@@ -34,7 +33,7 @@ function drawMatches(record: DrawRecord, opts: { issueKeyword: string; blueBall:
 }
 
 export function DataRecordsPage(props: DataRecordsPageProps) {
-  const { recentLimit, vizLoading, vizError, vizStats, setRecentLimit, loadVizData } = props
+  const { recentLimit, vizLoading, vizStats, setRecentLimit, loadVizData } = props
   const [issueKeyword, setIssueKeyword] = useState("")
   const [blueBall, setBlueBall] = useState("")
   const [redBall, setRedBall] = useState("")
@@ -71,8 +70,7 @@ export function DataRecordsPage(props: DataRecordsPageProps) {
           <input value={redSumMax} onChange={(e) => setRedSumMax(e.target.value)} placeholder="和值最大值" />
         </div>
 
-        {vizError ? <p className="status error">{vizError}</p> : null}
-        {!vizError && vizLoading ? <p className="status">正在读取开奖记录...</p> : null}
+        {vizLoading ? <p className="status">正在读取开奖记录...</p> : null}
 
         {vizStats ? (
           <>

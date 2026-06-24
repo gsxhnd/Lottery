@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
 import { api } from "@/lib/api"
 import type { HealthResponse, ModelInfo, PredictionResponse, WinningStatsResponse } from "@/types/lottery"
@@ -13,7 +14,6 @@ export function useLotteryDashboard() {
   const [isLoadingModel, setIsLoadingModel] = useState(false)
   const [isPredicting, setIsPredicting] = useState(false)
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null)
-  const [toast, setToast] = useState<{ message: string; isError: boolean } | null>(null)
   const [vizStats, setVizStats] = useState<WinningStatsResponse | null>(null)
   const [vizLoading, setVizLoading] = useState(false)
   const [vizError, setVizError] = useState<string | null>(null)
@@ -22,15 +22,13 @@ export function useLotteryDashboard() {
   const modelItems = Array.isArray(models) ? models : []
   const canPredict = useMemo(() => Boolean(loadedModelPath || selectedModelPath) && !isPredicting, [isPredicting, loadedModelPath, selectedModelPath])
 
-  useEffect(() => {
-    let timer: number | undefined
-    if (toast) timer = window.setTimeout(() => setToast(null), 4000)
-    return () => {
-      if (timer) window.clearTimeout(timer)
+  const showToast = (message: string, isError = false) => {
+    if (isError) {
+      toast.error(message)
+      return
     }
-  }, [toast])
-
-  const showToast = (message: string, isError = false) => setToast({ message, isError })
+    toast.success(message)
+  }
 
   const refreshHealth = async () => {
     try {
@@ -115,7 +113,9 @@ export function useLotteryDashboard() {
       const data = await api<WinningStatsResponse>(`/data/winning-stats?recent_limit=${limit}`)
       setVizStats(data)
     } catch (error) {
-      setVizError(error instanceof Error ? error.message : "加载可视化数据失败")
+      const message = error instanceof Error ? error.message : "加载可视化数据失败"
+      setVizError(message)
+      showToast(message, true)
     } finally {
       setVizLoading(false)
     }
@@ -138,7 +138,6 @@ export function useLotteryDashboard() {
     isLoadingModel,
     isPredicting,
     prediction,
-    toast,
     vizStats,
     vizLoading,
     vizError,
@@ -147,7 +146,6 @@ export function useLotteryDashboard() {
     setSelectedModelPath,
     setSaveSummary,
     setRecentLimit,
-    setToast,
     loadModels,
     loadSelectedModel,
     runPredict,
