@@ -1,17 +1,15 @@
 """FastAPI 应用"""
 
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 from lottery_api.business.prediction_service import PredictionService
 from lottery_api.handlers.routes import register_routes
+from lottery_api.static_files import mount_spa, resolve_static_dir
 
 _service: PredictionService | None = None
-_STATIC_DIR = Path(__file__).resolve().parents[2] / "static"
 
 
 def get_service() -> PredictionService:
@@ -43,11 +41,8 @@ def create_app(*, config_path: str | None = None) -> FastAPI:
     async def file_not_found_handler(_request, exc: FileNotFoundError):
         return JSONResponse(status_code=404, content={"detail": str(exc)})
 
-    if _STATIC_DIR.is_dir():
-        app.mount("/assets", StaticFiles(directory=_STATIC_DIR / "assets"), name="assets")
-
-        @app.get("/", include_in_schema=False)
-        def web_ui() -> FileResponse:
-            return FileResponse(_STATIC_DIR / "index.html")
+    static_dir = resolve_static_dir()
+    if static_dir is not None:
+        mount_spa(app, static_dir)
 
     return app

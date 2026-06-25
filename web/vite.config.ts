@@ -7,7 +7,7 @@ import { defineConfig } from "vite"
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
-    outDir: path.resolve(__dirname, "../static"),
+    outDir: "dist",
     emptyOutDir: true,
   },
   server: {
