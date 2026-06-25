@@ -1,19 +1,11 @@
-"""训练/推理统一的数据访问入口"""
+"""训练侧数据编排：raw 解析、同步与按配置加载记录。"""
 
 from pathlib import Path
 from typing import Any
 
-from lottery.data.loader import load_lottery_data
-from lottery.data.parser import iter_raw_records
-from lottery_data import LotteryDuckDBRepository, LotteryRecord, SyncResult
-
-
-def get_db_path(config: dict[str, Any]) -> str:
-    return config["data"].get("db_file", "data/lottery.duckdb")
-
-
-def get_data_store(config: dict[str, Any]) -> LotteryDuckDBRepository:
-    return LotteryDuckDBRepository(get_db_path(config))
+from lottery_data import LotteryRecord, SyncResult, get_db_path, get_repository
+from lottery_train.data.loader import load_lottery_data
+from lottery_train.data.parser import iter_raw_records
 
 
 def sync_data(
@@ -23,7 +15,7 @@ def sync_data(
 ) -> SyncResult:
     """将 raw 文件同步到 DuckDB。"""
     raw_file = config["data"]["raw_file"]
-    store = get_data_store(config)
+    store = get_repository(config)
     if full:
         return store.sync_full(list(iter_raw_records(raw_file)))
     return store.sync_incremental(list(iter_raw_records(raw_file)))
@@ -46,7 +38,7 @@ def load_lottery_records(config: dict[str, Any]) -> list[LotteryRecord]:
         return load_lottery_data(raw_file)
 
     if source in ("duckdb", "auto") and db_path.exists():
-        store = LotteryDuckDBRepository(db_path)
+        store = get_repository(config)
         records = store.fetch_records()
         if records:
             return records

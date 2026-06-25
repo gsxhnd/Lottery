@@ -4,10 +4,10 @@ import random
 
 import torch
 
-from lottery.data import build_sequence_tensor, denormalize_prediction
-from lottery.domain.types import PredictionCandidate, PredictionResult
+from lottery_train.data import build_sequence_tensor, denormalize_prediction
+from lottery_train.domain.types import PredictionCandidate, PredictionResult
 from lottery_data import LotteryRecord
-from lottery.models import LotteryLSTM
+from lottery_train.models import LotteryLSTM
 
 DEFAULT_SEQ_LEN = 10
 DEFAULT_NUM_CANDIDATES = 5

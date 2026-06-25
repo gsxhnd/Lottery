@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from lottery.domain.types import PredictionResult
+from lottery_train.domain.types import PredictionResult
 
 
 def save_prediction(

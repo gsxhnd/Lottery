@@ -3,8 +3,9 @@
 import argparse
 from typing import Any
 
-from lottery.config import load_config
-from lottery.data.repository import get_data_store, sync_data
+from lottery_data import get_repository
+from lottery_train.config import load_config
+from lottery_train.data.repository import sync_data
 
 
 def register_data_commands(subparsers: argparse._SubParsersAction) -> None:
@@ -52,7 +53,7 @@ def _sync(args: argparse.Namespace) -> int:
 
 def _status(args: argparse.Namespace) -> int:
     config = load_config(args.config)
-    store = get_data_store(config)
+    store = get_repository(config)
     db_file = config["data"].get("db_file", "data/lottery.duckdb")
     raw_file = config["data"]["raw_file"]
     count = store.count()

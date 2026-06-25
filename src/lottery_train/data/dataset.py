@@ -84,7 +84,7 @@ class LotteryDataset(Dataset):
         cls, config: dict, seq_len: int = 10
     ) -> "LotteryDataset":
         """从配置加载记录并构造 Dataset（优先 DuckDB，见 data.source）。"""
-        from lottery.data.repository import load_lottery_records
+        from lottery_train.data.repository import load_lottery_records
 
         return cls(load_lottery_records(config), seq_len=seq_len)
 

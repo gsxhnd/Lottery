@@ -40,16 +40,18 @@ uv run lottery train              # 训练（默认从 DuckDB 读数据）
 ```text
 Lottery/
 ├── data/                    # 本地数据（gitignore）：raw_ssq.txt、lottery.duckdb
+├── static/                  # 前端构建产物（gitignore）
 ├── docs/                    # 文档
-├── src/lottery/             # 源码
-│   ├── cli/                 # 命令行入口（含 data 子命令）
-│   ├── config/              # 配置加载
-│   ├── domain/              # 领域对象
-│   ├── data/                # 解析、DuckDB、Dataset
-│   │   └── duckdb/          # 存储与同步
-│   ├── models/              # 模型定义
-│   ├── training/            # 训练流程
-│   └── inference/           # 推理执行
+├── src/
+│   ├── lottery_train/       # 数据清洗、同步与模型训练
+│   │   ├── cli/             # 命令行入口（含 data 子命令）
+│   │   ├── config/          # 配置加载
+│   │   ├── data/            # raw 解析、同步编排、Dataset
+│   │   ├── models/          # 模型定义
+│   │   └── training/        # 训练流程
+│   ├── lottery_data/        # DuckDB 读写（被 train / api 调用）
+│   ├── lottery_api/         # FastAPI 服务与推理
+│   └── lottery_web/         # React 前端（Vite）
 ├── config/
 │   └── config.toml.example  # 配置示例
 ├── pyproject.toml

@@ -5,8 +5,8 @@ from pathlib import Path
 
 import torch
 
-from lottery.domain.types import ModelArtifact
-from lottery.models import LotteryLSTM
+from lottery_train.domain.types import ModelArtifact
+from lottery_train.models import LotteryLSTM
 
 
 def resolve_model_dir(model_path: str) -> Path:

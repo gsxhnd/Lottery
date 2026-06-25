@@ -3,14 +3,14 @@
 from datetime import datetime
 from pathlib import Path
 
-from lottery.config import load_config
-from lottery.inference import (
+from lottery_train.config import load_config
+from lottery_train.inference import (
     DEFAULT_SEQ_LEN,
     load_model_artifact,
     predict_next,
     save_prediction,
 )
-from lottery.models import LotteryLSTM
+from lottery_train.models import LotteryLSTM
 from lottery_api.data.draw_repository import DrawRepository
 
 

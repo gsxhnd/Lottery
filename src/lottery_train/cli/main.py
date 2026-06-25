@@ -16,7 +16,7 @@ def main() -> int:
     train_parser = subparsers.add_parser("train", help="训练模型")
     train_parser.add_argument("--config", type=str, help="配置文件路径")
 
-    from lottery.cli.data import register_data_commands
+    from lottery_train.cli.data import register_data_commands
 
     register_data_commands(subparsers)
 
@@ -34,7 +34,7 @@ def main() -> int:
     elif args.command == "predict":
         return _predict(args)
     elif args.command == "data":
-        from lottery.cli.data import run_data_command
+        from lottery_train.cli.data import run_data_command
 
         return run_data_command(args)
     else:
@@ -47,10 +47,10 @@ def _train(args) -> int:
     import torch
     import platform
     from torch.utils.data import DataLoader, random_split
-    from lottery.config import load_config
-    from lottery.data import LotteryDataset
-    from lottery.models import LotteryLSTM
-    from lottery.training import Trainer, save_model
+    from lottery_train.config import load_config
+    from lottery_train.data import LotteryDataset
+    from lottery_train.models import LotteryLSTM
+    from lottery_train.training import Trainer, save_model
 
     # 显示环境信息
     print("=" * 50)
@@ -114,9 +114,9 @@ def _predict(args) -> int:
     import json
     from datetime import datetime
 
-    from lottery.config import load_config
-    from lottery.data import load_lottery_records
-    from lottery.inference import (
+    from lottery_train.config import load_config
+    from lottery_train.data import load_lottery_records
+    from lottery_train.inference import (
         DEFAULT_SEQ_LEN,
         load_model_artifact,
         predict_next,

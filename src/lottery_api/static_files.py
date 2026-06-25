@@ -7,12 +7,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-
-# 优先 web/dist（Vite 默认），兼容历史 static/ 输出目录
-_STATIC_DIR_CANDIDATES = (
-    _REPO_ROOT / "web" / "dist",
-    _REPO_ROOT / "static",
-)
+_STATIC_DIR = _REPO_ROOT / "static"
 
 # 这些路径前缀不走 index.html 回退（由 API 或 FastAPI 内置路由处理）
 _SPA_EXCLUDED_PREFIXES = (
@@ -25,9 +20,8 @@ _SPA_EXCLUDED_PREFIXES = (
 
 
 def resolve_static_dir() -> Path | None:
-    for candidate in _STATIC_DIR_CANDIDATES:
-        if (candidate / "index.html").is_file():
-            return candidate
+    if (_STATIC_DIR / "index.html").is_file():
+        return _STATIC_DIR
     return None
 
 
